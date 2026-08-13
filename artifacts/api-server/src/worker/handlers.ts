@@ -1,6 +1,7 @@
 import type { IntentJob } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { workerConfig } from "./config";
+import { collectGoOfficialFixtures } from "./fixture-collector";
 import type { IntentJobType, JobCheckpoint, JobHandler } from "./job-types";
 
 const foundationHandler = (jobType: IntentJobType): JobHandler =>
@@ -30,7 +31,7 @@ const foundationHandler = (jobType: IntentJobType): JobHandler =>
   };
 
 export const jobHandlers: Record<IntentJobType, JobHandler> = {
-  fixture_sync: foundationHandler("fixture_sync"),
+  fixture_sync: async (_job, signal) => collectGoOfficialFixtures(signal),
   source_collection: foundationHandler("source_collection"),
   deduplication: foundationHandler("deduplication"),
   signal_qualification: foundationHandler("signal_qualification"),
