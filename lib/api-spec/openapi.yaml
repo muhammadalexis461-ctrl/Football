@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: worker
+    description: Background worker operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /worker/healthz:
+    get:
+      operationId: workerHealthCheck
+      tags: [worker]
+      summary: Background worker health check
+      description: Returns worker lease, heartbeat, and queue health
+      responses:
+        "200":
+          description: Worker health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerHealth"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +48,31 @@ components:
           type: string
       required:
         - status
+    WorkerHealth:
+      type: object
+      properties:
+        active:
+          type: boolean
+        ownerId:
+          type: [string, "null"]
+        heartbeatAt:
+          type: [string, "null"]
+          format: date-time
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        queuedJobs:
+          type: number
+        runningJobs:
+          type: number
+        failedJobs:
+          type: number
+      required:
+        - active
+        - ownerId
+        - heartbeatAt
+        - expiresAt
+        - queuedJobs
+        - runningJobs
+        - failedJobs
 

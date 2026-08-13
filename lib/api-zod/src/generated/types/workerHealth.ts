@@ -5,20 +5,16 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
 
 export interface WorkerHealth {
   active: boolean;
   /** @nullable */
   ownerId: string | null;
   /** @nullable */
-  heartbeatAt: string | null;
+  heartbeatAt: Date | null;
   /** @nullable */
-  expiresAt: string | null;
+  expiresAt: Date | null;
   queuedJobs: number;
   runningJobs: number;
   failedJobs: number;
 }
-
