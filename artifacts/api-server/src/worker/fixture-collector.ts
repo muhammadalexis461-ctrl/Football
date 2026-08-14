@@ -9,6 +9,7 @@ import {
 import { logger } from "../lib/logger";
 import { workerConfig } from "./config";
 import { RateLimiter } from "./rate-limiter";
+import { upsertSignalForFixture } from "./signal-store";
 import type { JobCheckpoint } from "./job-types";
 
 const USER_AGENT = "GoOfficial-Intent-Engine/1.0 (+public-fixture-collector)";
@@ -571,24 +572,31 @@ const saveChangedRecords = async (
       .limit(1);
 
     if (!existing) {
-      await db.insert(fixtureRecordsTable).values({
-        sourceId: source.id,
-        externalKey: record.externalKey,
-        name: record.name,
-        fixtureType: record.fixtureType,
-        startsAt: record.startsAt,
-        endsAt: record.endsAt,
-        venue: record.venue,
-        city: record.city,
-        packageName: record.packageName,
-        priceAmount: record.priceAmount,
-        priceText: record.priceText,
-        currency: record.currency,
-        availability: record.availability,
-        sourceUrl: record.sourceUrl,
-        rawData: record.rawData,
-        recordHash,
-      });
+      const [created] = await db
+        .insert(fixtureRecordsTable)
+        .values({
+          sourceId: source.id,
+          externalKey: record.externalKey,
+          name: record.name,
+          fixtureType: record.fixtureType,
+          startsAt: record.startsAt,
+          endsAt: record.endsAt,
+          venue: record.venue,
+          city: record.city,
+          packageName: record.packageName,
+          priceAmount: record.priceAmount,
+          priceText: record.priceText,
+          currency: record.currency,
+          availability: record.availability,
+          sourceUrl: record.sourceUrl,
+          rawData: record.rawData,
+          recordHash,
+        })
+        .returning();
+      if (!created) {
+        throw new Error(`Unable to create fixture record ${record.externalKey}`);
+      }
+      await upsertSignalForFixture(created);
       inserted += 1;
       continue;
     }
@@ -597,7 +605,7 @@ const saveChangedRecords = async (
       continue;
     }
 
-    await db
+    const [updatedRecord] = await db
       .update(fixtureRecordsTable)
       .set({
         name: record.name,
@@ -616,7 +624,12 @@ const saveChangedRecords = async (
         recordHash,
         lastChangedAt: new Date(),
       })
-      .where(eq(fixtureRecordsTable.id, existing.id));
+      .where(eq(fixtureRecordsTable.id, existing.id))
+      .returning();
+    if (!updatedRecord) {
+      throw new Error(`Unable to update fixture record ${existing.id}`);
+    }
+    await upsertSignalForFixture(updatedRecord);
     updated += 1;
   }
   return { inserted, updated };

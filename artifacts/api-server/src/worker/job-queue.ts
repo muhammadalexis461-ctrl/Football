@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray, lt, or } from "drizzle-orm";
+import { and, count, eq, inArray, lt, or } from "drizzle-orm";
 import {
   db,
   intentJobSchedulesTable,
@@ -320,15 +320,15 @@ export const getWorkerHealth = async (): Promise<WorkerHealth> => {
     .where(eq(intentWorkerLeasesTable.leaseName, LEASE_NAME))
     .limit(1);
   const [queued] = await db
-    .select({ count: intentJobsTable.id })
+    .select({ count: count() })
     .from(intentJobsTable)
     .where(eq(intentJobsTable.status, "pending"));
   const [running] = await db
-    .select({ count: intentJobsTable.id })
+    .select({ count: count() })
     .from(intentJobsTable)
     .where(eq(intentJobsTable.status, "running"));
   const [failed] = await db
-    .select({ count: intentJobsTable.id })
+    .select({ count: count() })
     .from(intentJobsTable)
     .where(eq(intentJobsTable.status, "failed"));
 
