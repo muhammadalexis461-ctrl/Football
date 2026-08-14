@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Operations dashboard
+  - name: leads
+    description: Qualified lead intelligence
+  - name: fixtures
+    description: Upcoming fixture matches
 paths:
   /healthz:
     get:
@@ -24,6 +30,74 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard/overview:
+    get:
+      operationId: getDashboardOverview
+      tags: [dashboard]
+      summary: Get dashboard overview
+      responses:
+        "200":
+          description: Current collection and lead metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardOverview"
+  /leads:
+    get:
+      operationId: getLeads
+      tags: [leads]
+      summary: Search and sort leads
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: intent
+          in: query
+          schema:
+            type: string
+            enum: [all, HIGH, MEDIUM, LOW]
+            default: all
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, new, contacted, qualified, archived]
+            default: all
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [score, createdAt, name]
+            default: score
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: Matching leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+  /fixtures:
+    get:
+      operationId: getFixtures
+      tags: [fixtures]
+      summary: Get fixture matches
+      responses:
+        "200":
+          description: Upcoming fixture matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Fixture"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +107,80 @@ components:
           type: string
       required:
         - status
+    WorkerStatus:
+      type: object
+      required: [state, lastHeartbeat, activeWorkers, totalWorkers]
+      properties:
+        state:
+          type: string
+          enum: [online, degraded, offline]
+        lastHeartbeat:
+          type: string
+          format: date-time
+        activeWorkers:
+          type: number
+        totalWorkers:
+          type: number
+    DashboardOverview:
+      type: object
+      required:
+        - worker
+        - lastSuccessfulCollection
+        - jobsRunning
+        - failedJobs
+        - signalsCollected
+        - qualifiedLeads
+        - highIntentLeads
+        - fixtureMatches
+      properties:
+        worker:
+          $ref: "#/components/schemas/WorkerStatus"
+        lastSuccessfulCollection:
+          type: string
+          format: date-time
+        jobsRunning:
+          type: number
+        failedJobs:
+          type: number
+        signalsCollected:
+          type: number
+        qualifiedLeads:
+          type: number
+        highIntentLeads:
+          type: number
+        fixtureMatches:
+          type: number
+    Lead:
+      type: object
+      required: [id, name, company, email, source, score, intent, status, signal, createdAt, lastActivity]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        company: { type: string }
+        email: { type: string }
+        source: { type: string }
+        score: { type: number }
+        intent:
+          type: string
+          enum: [HIGH, MEDIUM, LOW]
+        status:
+          type: string
+          enum: [new, contacted, qualified, archived]
+        signal: { type: string }
+        createdAt: { type: string, format: date-time }
+        lastActivity: { type: string, format: date-time }
+    Fixture:
+      type: object
+      required: [id, homeTeam, awayTeam, competition, kickoffAt, venue, status, confidence]
+      properties:
+        id: { type: string }
+        homeTeam: { type: string }
+        awayTeam: { type: string }
+        competition: { type: string }
+        kickoffAt: { type: string, format: date-time }
+        venue: { type: string }
+        status:
+          type: string
+          enum: [scheduled, live, finished]
+        confidence: { type: number }
 

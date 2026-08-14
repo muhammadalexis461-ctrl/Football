@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Football Intelligence Dashboard"
+description = "A production operations dashboard for monitoring football data collection, worker health, jobs, signals, qualified leads, high-intent leads, and fixture matches with searchable lead management."
+version = "1.0.0"
+id = "artifacts/football-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22136
+
+[services.development]
+run = "pnpm --filter @workspace/football-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/football-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/football-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22136"
+BASE_PATH = "/"
