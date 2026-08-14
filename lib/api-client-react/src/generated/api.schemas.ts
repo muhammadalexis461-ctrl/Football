@@ -9,6 +9,19 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface WorkerHealth {
+  active: boolean;
+  /** @nullable */
+  ownerId: string | null;
+  /** @nullable */
+  heartbeatAt: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  queuedJobs: number;
+  runningJobs: number;
+  failedJobs: number;
+}
+
 export type WorkerStatusState = typeof WorkerStatusState[keyof typeof WorkerStatusState];
 
 
@@ -25,6 +38,18 @@ export interface WorkerStatus {
   totalWorkers: number;
 }
 
+export interface DashboardSummary {
+  worker: WorkerHealth;
+  /** @nullable */
+  lastSuccessfulCollection: string | null;
+  jobsRunning: number;
+  failedJobs: number;
+  signalsCollected: number;
+  qualifiedLeads: number;
+  highIntentLeads: number;
+  fixtureMatches: number;
+}
+
 export interface DashboardOverview {
   worker: WorkerStatus;
   lastSuccessfulCollection: string;
@@ -34,6 +59,60 @@ export interface DashboardOverview {
   qualifiedLeads: number;
   highIntentLeads: number;
   fixtureMatches: number;
+}
+
+export type DashboardLeadTicketIntent = typeof DashboardLeadTicketIntent[keyof typeof DashboardLeadTicketIntent];
+
+
+export const DashboardLeadTicketIntent = {
+  tickets: 'tickets',
+  hospitality: 'hospitality',
+  unknown: 'unknown',
+} as const;
+
+export type DashboardLeadUrgency = typeof DashboardLeadUrgency[keyof typeof DashboardLeadUrgency];
+
+
+export const DashboardLeadUrgency = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  unknown: 'unknown',
+} as const;
+
+export interface DashboardLead {
+  id: string;
+  signalId: string;
+  /** @nullable */
+  team: string | null;
+  /** @nullable */
+  fixture: string | null;
+  ticketIntent: DashboardLeadTicketIntent;
+  /** @nullable */
+  quantity: number | null;
+  groupCorporateIntent: boolean;
+  urgency: DashboardLeadUrgency;
+  confidence: number;
+  intentScore: number;
+  reason: string;
+  sourceUrl: string;
+  collectedAt: string;
+  qualifiedAt: string;
+  /** @nullable */
+  startsAt: string | null;
+  /** @nullable */
+  venue: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  availability: string | null;
+}
+
+export interface DashboardLeadPage {
+  items: DashboardLead[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export type LeadIntent = typeof LeadIntent[keyof typeof LeadIntent];
@@ -88,6 +167,62 @@ export interface Fixture {
   status: FixtureStatus;
   confidence: number;
 }
+
+export type ListDashboardLeadsParams = {
+search?: string;
+ticketIntent?: ListDashboardLeadsTicketIntent;
+urgency?: ListDashboardLeadsUrgency;
+/**
+ * @minimum 0
+ * @maximum 100
+ */
+minIntentScore?: number;
+sortBy?: ListDashboardLeadsSortBy;
+sortOrder?: ListDashboardLeadsSortOrder;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+};
+
+export type ListDashboardLeadsTicketIntent = typeof ListDashboardLeadsTicketIntent[keyof typeof ListDashboardLeadsTicketIntent];
+
+
+export const ListDashboardLeadsTicketIntent = {
+  tickets: 'tickets',
+  hospitality: 'hospitality',
+} as const;
+
+export type ListDashboardLeadsUrgency = typeof ListDashboardLeadsUrgency[keyof typeof ListDashboardLeadsUrgency];
+
+
+export const ListDashboardLeadsUrgency = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type ListDashboardLeadsSortBy = typeof ListDashboardLeadsSortBy[keyof typeof ListDashboardLeadsSortBy];
+
+
+export const ListDashboardLeadsSortBy = {
+  intentScore: 'intentScore',
+  confidence: 'confidence',
+  collectedAt: 'collectedAt',
+} as const;
+
+export type ListDashboardLeadsSortOrder = typeof ListDashboardLeadsSortOrder[keyof typeof ListDashboardLeadsSortOrder];
+
+
+export const ListDashboardLeadsSortOrder = {
+  asc: 'asc',
+  desc: 'desc',
+} as const;
 
 export type GetLeadsParams = {
 search?: string;

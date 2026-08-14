@@ -10,8 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: worker
+    description: Background worker operations
   - name: dashboard
-    description: Operations dashboard
+    description: Operations and intent engine dashboard operations
   - name: leads
     description: Qualified lead intelligence
   - name: fixtures
@@ -30,6 +32,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /worker/healthz:
+    get:
+      operationId: workerHealthCheck
+      tags: [worker]
+      summary: Background worker health check
+      description: Returns worker lease, heartbeat, and queue health
+      responses:
+        "200":
+          description: Worker health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerHealth"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      description: Returns live worker state and aggregate intent engine metrics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
   /dashboard/overview:
     get:
       operationId: getDashboardOverview
@@ -42,6 +70,73 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardOverview"
+  /dashboard/leads:
+    get:
+      operationId: listDashboardLeads
+      tags: [dashboard]
+      summary: List qualified leads
+      description: Returns searchable, filterable, and sortable qualified intent leads
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: ticketIntent
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [tickets, hospitality]
+        - name: urgency
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: minIntentScore
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [intentScore, confidence, collectedAt]
+            default: intentScore
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Qualified lead page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardLeadPage"
   /leads:
     get:
       operationId: getLeads
@@ -50,7 +145,8 @@ paths:
       parameters:
         - name: search
           in: query
-          schema: { type: string }
+          schema:
+            type: string
         - name: intent
           in: query
           schema:
@@ -105,8 +201,34 @@ components:
       properties:
         status:
           type: string
+      required: [status]
+    WorkerHealth:
+      type: object
+      properties:
+        active:
+          type: boolean
+        ownerId:
+          type: [string, "null"]
+        heartbeatAt:
+          type: [string, "null"]
+          format: date-time
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        queuedJobs:
+          type: number
+        runningJobs:
+          type: number
+        failedJobs:
+          type: number
       required:
-        - status
+        - active
+        - ownerId
+        - heartbeatAt
+        - expiresAt
+        - queuedJobs
+        - runningJobs
+        - failedJobs
     WorkerStatus:
       type: object
       required: [state, lastHeartbeat, activeWorkers, totalWorkers]
@@ -120,6 +242,35 @@ components:
         activeWorkers:
           type: number
         totalWorkers:
+          type: number
+    DashboardSummary:
+      type: object
+      required:
+        - worker
+        - lastSuccessfulCollection
+        - jobsRunning
+        - failedJobs
+        - signalsCollected
+        - qualifiedLeads
+        - highIntentLeads
+        - fixtureMatches
+      properties:
+        worker:
+          $ref: "#/components/schemas/WorkerHealth"
+        lastSuccessfulCollection:
+          type: [string, "null"]
+          format: date-time
+        jobsRunning:
+          type: number
+        failedJobs:
+          type: number
+        signalsCollected:
+          type: number
+        qualifiedLeads:
+          type: number
+        highIntentLeads:
+          type: number
+        fixtureMatches:
           type: number
     DashboardOverview:
       type: object
@@ -150,9 +301,75 @@ components:
           type: number
         fixtureMatches:
           type: number
+    DashboardLead:
+      type: object
+      required:
+        - id
+        - signalId
+        - team
+        - fixture
+        - ticketIntent
+        - quantity
+        - groupCorporateIntent
+        - urgency
+        - confidence
+        - intentScore
+        - reason
+        - sourceUrl
+        - collectedAt
+        - qualifiedAt
+        - startsAt
+        - venue
+        - city
+        - availability
+      properties:
+        id: { type: string }
+        signalId: { type: string }
+        team: { type: [string, "null"] }
+        fixture: { type: [string, "null"] }
+        ticketIntent:
+          type: string
+          enum: [tickets, hospitality, unknown]
+        quantity: { type: [number, "null"] }
+        groupCorporateIntent: { type: boolean }
+        urgency:
+          type: string
+          enum: [low, medium, high, unknown]
+        confidence: { type: number }
+        intentScore: { type: number }
+        reason: { type: string }
+        sourceUrl: { type: string }
+        collectedAt: { type: string, format: date-time }
+        qualifiedAt: { type: string, format: date-time }
+        startsAt: { type: [string, "null"], format: date-time }
+        venue: { type: [string, "null"] }
+        city: { type: [string, "null"] }
+        availability: { type: [string, "null"] }
+    DashboardLeadPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardLead"
+        total: { type: number }
+        limit: { type: number }
+        offset: { type: number }
     Lead:
       type: object
-      required: [id, name, company, email, source, score, intent, status, signal, createdAt, lastActivity]
+      required:
+        - id
+        - name
+        - company
+        - email
+        - source
+        - score
+        - intent
+        - status
+        - signal
+        - createdAt
+        - lastActivity
       properties:
         id: { type: string }
         name: { type: string }
@@ -171,7 +388,15 @@ components:
         lastActivity: { type: string, format: date-time }
     Fixture:
       type: object
-      required: [id, homeTeam, awayTeam, competition, kickoffAt, venue, status, confidence]
+      required:
+        - id
+        - homeTeam
+        - awayTeam
+        - competition
+        - kickoffAt
+        - venue
+        - status
+        - confidence
       properties:
         id: { type: string }
         homeTeam: { type: string }
@@ -183,4 +408,3 @@ components:
           type: string
           enum: [scheduled, live, finished]
         confidence: { type: number }
-

@@ -16,11 +16,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  DashboardLeadPage,
   DashboardOverview,
+  DashboardSummary,
   Fixture,
   GetLeadsParams,
   HealthStatus,
-  Lead
+  Lead,
+  ListDashboardLeadsParams,
+  WorkerHealth
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -128,6 +132,162 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+export const getWorkerHealthCheckUrl = () => {
+
+
+
+
+  return `/api/worker/healthz`
+}
+
+/**
+ * Returns worker lease, heartbeat, and queue health
+ * @summary Background worker health check
+ */
+export const workerHealthCheck = async ( options?: Parameters<typeof customFetch>[1]): Promise<WorkerHealth> => {
+
+  return customFetch<WorkerHealth>(getWorkerHealthCheckUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getWorkerHealthCheckQueryKey = () => {
+    return [
+    `/api/worker/healthz`
+    ] as const;
+    }
+
+
+export const getWorkerHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof workerHealthCheck>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof workerHealthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getWorkerHealthCheckQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof workerHealthCheck>>> = ({ signal }) => workerHealthCheck({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof workerHealthCheck>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type WorkerHealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof workerHealthCheck>>>
+export type WorkerHealthCheckQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Background worker health check
+ */
+
+export function useWorkerHealthCheck<TData = Awaited<ReturnType<typeof workerHealthCheck>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof workerHealthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getWorkerHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetDashboardSummaryUrl = () => {
+
+
+
+
+  return `/api/dashboard/summary`
+}
+
+/**
+ * Returns live worker state and aggregate intent engine metrics
+ * @summary Get dashboard summary
+ */
+export const getDashboardSummary = async ( options?: Parameters<typeof customFetch>[1]): Promise<DashboardSummary> => {
+
+  return customFetch<DashboardSummary>(getGetDashboardSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDashboardSummaryQueryKey = () => {
+    return [
+    `/api/dashboard/summary`
+    ] as const;
+    }
+
+
+export const getGetDashboardSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardSummary>>> = ({ signal }) => getDashboardSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDashboardSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardSummary>>>
+export type GetDashboardSummaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get dashboard summary
+ */
+
+export function useGetDashboardSummary<TData = Awaited<ReturnType<typeof getDashboardSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDashboardSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetDashboardOverviewUrl = () => {
 
 
@@ -193,6 +353,91 @@ export function useGetDashboardOverview<TData = Awaited<ReturnType<typeof getDas
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetDashboardOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListDashboardLeadsUrl = (params?: ListDashboardLeadsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/dashboard/leads?${stringifiedParams}` : `/api/dashboard/leads`
+}
+
+/**
+ * Returns searchable, filterable, and sortable qualified intent leads
+ * @summary List qualified leads
+ */
+export const listDashboardLeads = async (params?: ListDashboardLeadsParams, options?: Parameters<typeof customFetch>[1]): Promise<DashboardLeadPage> => {
+
+  return customFetch<DashboardLeadPage>(getListDashboardLeadsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDashboardLeadsQueryKey = (params?: ListDashboardLeadsParams,) => {
+    return [
+    `/api/dashboard/leads`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListDashboardLeadsQueryOptions = <TData = Awaited<ReturnType<typeof listDashboardLeads>>, TError = ErrorType<unknown>>(params?: ListDashboardLeadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDashboardLeads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDashboardLeadsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDashboardLeads>>> = ({ signal }) => listDashboardLeads(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDashboardLeads>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListDashboardLeadsQueryResult = NonNullable<Awaited<ReturnType<typeof listDashboardLeads>>>
+export type ListDashboardLeadsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List qualified leads
+ */
+
+export function useListDashboardLeads<TData = Awaited<ReturnType<typeof listDashboardLeads>>, TError = ErrorType<unknown>>(
+ params?: ListDashboardLeadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDashboardLeads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListDashboardLeadsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

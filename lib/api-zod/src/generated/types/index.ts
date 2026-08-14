@@ -6,7 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './dashboardLead';
+export * from './dashboardLeadPage';
+export * from './dashboardLeadTicketIntent';
+export * from './dashboardLeadUrgency';
 export * from './dashboardOverview';
+export * from './dashboardSummary';
 export * from './fixture';
 export * from './fixtureStatus';
 export * from './getLeadsIntent';
@@ -18,5 +23,11 @@ export * from './healthStatus';
 export * from './lead';
 export * from './leadIntent';
 export * from './leadStatus';
+export * from './listDashboardLeadsParams';
+export * from './listDashboardLeadsSortBy';
+export * from './listDashboardLeadsSortOrder';
+export * from './listDashboardLeadsTicketIntent';
+export * from './listDashboardLeadsUrgency';
+export * from './workerHealth';
 export * from './workerStatus';
 export * from './workerStatusState';

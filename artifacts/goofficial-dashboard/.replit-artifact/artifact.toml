@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "GoOfficial Intent Dashboard"
+description = "A responsive operations dashboard for GoOfficial fixture collection, intent qualification, worker health, and high-intent lead triage."
+version = "1.0.0"
+id = "artifacts/goofficial-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23578
+
+[services.development]
+run = "pnpm --filter @workspace/goofficial-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/goofficial-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/goofficial-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23578"
+BASE_PATH = "/"

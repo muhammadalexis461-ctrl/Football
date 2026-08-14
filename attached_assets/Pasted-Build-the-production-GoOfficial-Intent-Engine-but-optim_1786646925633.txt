@@ -1,0 +1,72 @@
+Build the production GoOfficial Intent Engine, but optimize aggressively for Replit Agent credit usage.
+
+IMPORTANT:
+- Do not repeatedly rewrite existing files.
+- Before changing anything, inspect the existing implementation and reuse it.
+- Work incrementally and only modify files necessary for the current task.
+- Do not generate unnecessary documentation.
+- Do not create duplicate implementations.
+- Do not rebuild working components.
+- Prefer simple dependencies and existing Node.js functionality.
+- Keep prompts/tasks focused and finish each task before moving on.
+- Run targeted tests instead of the entire test suite after every tiny change.
+- Never use an LLM for work that deterministic code can handle.
+- Cache expensive operations.
+- Batch AI requests where practical.
+- Only send high-value/ambiguous signals to the LLM.
+
+The APPLICATION itself must run continuously in the background without Replit Agent.
+
+Create a persistent worker architecture:
+
+API server
++
+Background worker
++
+Scheduler
++
+PostgreSQL
+
+The worker must independently run:
+
+1. GoOfficial fixture synchronization
+2. Public-source collection
+3. Deduplication
+4. Signal qualification
+5. Fixture matching
+6. Lead scoring
+
+Use persistent job state so restarting the application does not lose progress.
+
+Implement:
+- job queue
+- scheduled jobs
+- retries with exponential backoff
+- rate limiting
+- concurrency limits
+- checkpointing
+- graceful shutdown
+- failed-job recovery
+- job locking to prevent duplicate workers
+- structured logging
+- health checks
+- worker heartbeat
+
+Use environment variables for:
+DATABASE_URL
+LLM_API_KEY
+COLLECTION_INTERVAL
+FIXTURE_SYNC_INTERVAL
+MAX_CONCURRENCY
+REQUEST_RATE
+AI_BATCH_SIZE
+
+The worker must resume unfinished work after restart.
+
+Do not use Replit Agent as the scheduler or worker.
+
+Build the application so the deployed Replit service performs the work automatically in the background.
+
+First inspect the repository, then implement only the foundation needed for this architecture.
+
+Run the build and fix errors.
