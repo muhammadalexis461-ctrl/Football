@@ -32,3 +32,82 @@ export const WorkerHealthCheckResponse = zod.object({
 })
 
 
+/**
+ * Returns live worker state and aggregate intent engine metrics
+ * @summary Get dashboard summary
+ */
+export const GetDashboardSummaryResponse = zod.object({
+  "worker": zod.object({
+  "active": zod.boolean(),
+  "ownerId": zod.string().nullable(),
+  "heartbeatAt": zod.coerce.date().nullable(),
+  "expiresAt": zod.coerce.date().nullable(),
+  "queuedJobs": zod.number(),
+  "runningJobs": zod.number(),
+  "failedJobs": zod.number()
+}),
+  "lastSuccessfulCollection": zod.coerce.date().nullable(),
+  "jobsRunning": zod.number(),
+  "failedJobs": zod.number(),
+  "signalsCollected": zod.number(),
+  "qualifiedLeads": zod.number(),
+  "highIntentLeads": zod.number(),
+  "fixtureMatches": zod.number()
+})
+
+
+/**
+ * Returns searchable, filterable, and sortable qualified intent leads
+ * @summary List qualified leads
+ */
+export const listDashboardLeadsQueryMinIntentScoreMin = 0;
+export const listDashboardLeadsQueryMinIntentScoreMax = 100;
+
+export const listDashboardLeadsQuerySortByDefault = `intentScore`;
+export const listDashboardLeadsQuerySortOrderDefault = `desc`;
+export const listDashboardLeadsQueryLimitDefault = 50;
+export const listDashboardLeadsQueryLimitMax = 100;
+
+export const listDashboardLeadsQueryOffsetDefault = 0;
+export const listDashboardLeadsQueryOffsetMin = 0;
+
+
+
+export const ListDashboardLeadsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "ticketIntent": zod.enum(['tickets', 'hospitality']).optional(),
+  "urgency": zod.enum(['low', 'medium', 'high']).optional(),
+  "minIntentScore": zod.coerce.number().min(listDashboardLeadsQueryMinIntentScoreMin).max(listDashboardLeadsQueryMinIntentScoreMax).optional(),
+  "sortBy": zod.enum(['intentScore', 'confidence', 'collectedAt']).default(listDashboardLeadsQuerySortByDefault),
+  "sortOrder": zod.enum(['asc', 'desc']).default(listDashboardLeadsQuerySortOrderDefault),
+  "limit": zod.coerce.number().int().min(1).max(listDashboardLeadsQueryLimitMax).default(listDashboardLeadsQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(listDashboardLeadsQueryOffsetMin).default(listDashboardLeadsQueryOffsetDefault)
+})
+
+export const ListDashboardLeadsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "signalId": zod.string(),
+  "team": zod.string().nullable(),
+  "fixture": zod.string().nullable(),
+  "ticketIntent": zod.enum(['tickets', 'hospitality', 'unknown']),
+  "quantity": zod.number().nullable(),
+  "groupCorporateIntent": zod.boolean(),
+  "urgency": zod.enum(['low', 'medium', 'high', 'unknown']),
+  "confidence": zod.number(),
+  "intentScore": zod.number(),
+  "reason": zod.string(),
+  "sourceUrl": zod.string(),
+  "collectedAt": zod.coerce.date(),
+  "qualifiedAt": zod.coerce.date(),
+  "startsAt": zod.coerce.date().nullable(),
+  "venue": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "availability": zod.string().nullable()
+})),
+  "total": zod.number(),
+  "limit": zod.number(),
+  "offset": zod.number()
+})
+
+

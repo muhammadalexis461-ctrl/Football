@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: worker
     description: Background worker operations
+  - name: dashboard
+    description: Intent engine dashboard operations
 paths:
   /healthz:
     get:
@@ -39,6 +41,86 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkerHealth"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      description: Returns live worker state and aggregate intent engine metrics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/leads:
+    get:
+      operationId: listDashboardLeads
+      tags: [dashboard]
+      summary: List qualified leads
+      description: Returns searchable, filterable, and sortable qualified intent leads
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: ticketIntent
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [tickets, hospitality]
+        - name: urgency
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: minIntentScore
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [intentScore, confidence, collectedAt]
+            default: intentScore
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Qualified lead page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardLeadPage"
 components:
   schemas:
     HealthStatus:
@@ -75,4 +157,114 @@ components:
         - queuedJobs
         - runningJobs
         - failedJobs
+    DashboardSummary:
+      type: object
+      properties:
+        worker:
+          $ref: "#/components/schemas/WorkerHealth"
+        lastSuccessfulCollection:
+          type: [string, "null"]
+          format: date-time
+        jobsRunning:
+          type: number
+        failedJobs:
+          type: number
+        signalsCollected:
+          type: number
+        qualifiedLeads:
+          type: number
+        highIntentLeads:
+          type: number
+        fixtureMatches:
+          type: number
+      required:
+        - worker
+        - lastSuccessfulCollection
+        - jobsRunning
+        - failedJobs
+        - signalsCollected
+        - qualifiedLeads
+        - highIntentLeads
+        - fixtureMatches
+    DashboardLead:
+      type: object
+      properties:
+        id:
+          type: string
+        signalId:
+          type: string
+        team:
+          type: [string, "null"]
+        fixture:
+          type: [string, "null"]
+        ticketIntent:
+          type: string
+          enum: [tickets, hospitality, unknown]
+        quantity:
+          type: [number, "null"]
+        groupCorporateIntent:
+          type: boolean
+        urgency:
+          type: string
+          enum: [low, medium, high, unknown]
+        confidence:
+          type: number
+        intentScore:
+          type: number
+        reason:
+          type: string
+        sourceUrl:
+          type: string
+        collectedAt:
+          type: string
+          format: date-time
+        qualifiedAt:
+          type: string
+          format: date-time
+        startsAt:
+          type: [string, "null"]
+          format: date-time
+        venue:
+          type: [string, "null"]
+        city:
+          type: [string, "null"]
+        availability:
+          type: [string, "null"]
+      required:
+        - id
+        - signalId
+        - team
+        - fixture
+        - ticketIntent
+        - quantity
+        - groupCorporateIntent
+        - urgency
+        - confidence
+        - intentScore
+        - reason
+        - sourceUrl
+        - collectedAt
+        - qualifiedAt
+        - startsAt
+        - venue
+        - city
+        - availability
+    DashboardLeadPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardLead"
+        total:
+          type: number
+        limit:
+          type: number
+        offset:
+          type: number
+      required:
+        - items
+        - total
+        - limit
+        - offset
 
